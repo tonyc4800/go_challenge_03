@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"image/jpeg"
+	"image/png"
 	"os"
 )
 
@@ -19,7 +19,8 @@ func returnImgFromPath(imgPath string) (image.Image, error) {
 	defer f.Close()
 
 	//img, _, err := image.Decode(r)
-	img, err := jpeg.Decode(f)
+	//img, err := jpeg.Decode(f)
+	img, err := png.Decode(f)
 	if err != nil {
 		return nil, fmt.Errorf("unable read img: %v", err)
 	}
@@ -145,7 +146,7 @@ func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
 			nVal := color.RGBA{R: uint8(imgVals[0]), G: uint8(imgVals[1]), B: uint8(imgVals[2]), A: 255}
 			fmt.Printf("(%v,%v)%v:{%v} %v:{%v} %v:{%v}\n", i, j, "red", nVal.R, "green", nVal.G, "blue", nVal.B)
 			//rImage.SetRGBA(i, j, nVal)
-			nVal = color.RGBA{R: 42, G: 168, B: 22, A: 255}
+			//nVal = color.RGBA{R: 42, G: 168, B: 22, A: 255}
 			rImage.Set(i, j, nVal)
 
 			// Update coordinate grid.
@@ -176,7 +177,7 @@ func main() {
 
 	// Profit
 
-	tarImgP := "./input/target/day_man.jpg"
+	tarImgP := "./input/target/day_man.png"
 
 	img, err := returnImgFromPath(tarImgP)
 	if err != nil {
@@ -190,14 +191,16 @@ func main() {
 	oHeight := bounds.Max.Y - bounds.Min.Y
 	fmt.Printf("resizedTargetImg: %vx%v\n", oWidth, oHeight)
 
-	rsImgF, err := os.Create("./output/resizedTarget.jpg")
+	rsImgF, err := os.Create("./output/resizedTarget.png")
 	if err != nil {
 		fmt.Printf("Error creating img file: %v\n", err)
 	}
 	//defer rsImgF.Close()
-	err = jpeg.Encode(rsImgF, resizedTargetImg, nil)
+	//jack := jpeg.Options{Quality: 100}
+	//err = jpeg.Encode(rsImgF, resizedTargetImg, &jack)
+	err = png.Encode(rsImgF, resizedTargetImg)
 
-	createdImgF := "./output/resizedTarget.jpg"
+	createdImgF := "./output/resizedTarget.png"
 	readCreatedImg, err := returnImgFromPath(createdImgF)
 	if err != nil {
 		fmt.Printf("Error Obtaining Img: %v\n", err)
