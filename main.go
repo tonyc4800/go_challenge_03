@@ -9,8 +9,6 @@ import (
 
 // image documentation: https://golang.org/pkg/image/
 
-// ----------- Mosaic Image
-
 // returnImgFromPath accepts a file path to a jpeg image and returns the image.
 func returnImgFromPath(imgPath string) (image.Image, error) {
 	r, err := os.Open(imgPath)
@@ -56,42 +54,31 @@ func calcAvgRGB(img image.Image) [3]float64 {
 	return rgbVals
 }
 
-// Break into color "buckets"
-
-// Break each bucket into Light - Med - Dark (or range, based on defined value)
-
-// ---------- Target Image
-// Read target image
-
-// Downsample target image to X,Y
-
-// Determine average pix color
-
-// Break colors into "buckets" [determined by `mosaic buckets`]
-
-// Light - Med - Dark color for each bucket (or range, based on defined value)
-
-// ------------ Image Creation
-// Map Mosaic images to target image
-
-// Create new image w/each mosaic image mapped to the target image as a 'pixel'
-
 func main() {
 	// Read mosaic images to see what values we have to work with.
+	// - read in
+	// - downsample
+	// - calculate avg for image
+	// - create map mImgIndex:avgPixValue
 
 	// Read in target image to see how we have to map
+	// - read in
+	// - downsample to target size
+	// - create map pixIndex:avgPixValue
 
-	// Map mosaic images to target image values
-
-	// Create final image
+	// Image Creation
+	// - map mosaic images to target image pixels
+	// - create new image
 
 	// Profit
 
 	tarImgP := "./input/target/day_man.jpg"
+
 	img, err := returnImgFromPath(tarImgP)
 	if err != nil {
 		fmt.Printf("Error Obtaining Img: %v\n", err)
 	}
+
 	AvgRGB := calcAvgRGB(img)
 
 	fmt.Printf("%-8s %-8s %-8s\n", "red", "green", "blue")
