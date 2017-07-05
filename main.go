@@ -25,7 +25,6 @@ func returnImgFromPath(imgPath string) (image.Image, error) {
 	return img, nil
 }
 
-// TODO: complete this function.
 // calcAvgRGBm accepts and image and returns the average pixel values for each
 // channel as an 8-bit float64 array.
 func calcAvgRGB(img image.Image) [3]float64 {
@@ -55,6 +54,7 @@ func calcAvgRGB(img image.Image) [3]float64 {
 	return rgbVals
 }
 
+// TODO: complete this function.
 // resizeImage accepts and image and target x and y sizes, then resizes and
 // returns the image. Docs: https://golang.org/pkg/image/#NewRGBA
 func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
@@ -73,10 +73,12 @@ func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
 	fmt.Printf("wRatio: %v\n", wRatio)
 	fmt.Printf("hRatio: %v\n", hRatio)
 	for y := 0; y < tHeight; y++ {
+		// The coordinate value will be cropped to an int value, not rounded.
 		i := int(float64(y) * hRatio)
 		yCoords = append(yCoords, i)
 	}
 	for x := 0; x < tWidth; x++ {
+		// The coordinate value will be cropped to an int value, not rounded.
 		i := int(float64(x) * wRatio)
 		xCoords = append(xCoords, i)
 	}
