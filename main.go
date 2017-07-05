@@ -10,7 +10,22 @@ import (
 // image documentation: https://golang.org/pkg/image/
 
 // ----------- Mosaic Image
-// Read image
+
+// returnImgFromPath accepts a file path to a jpeg image and returns the image.
+func returnImgFromPath(imgPath string) (image.Image, error) {
+	r, err := os.Open(imgPath)
+	if err != nil {
+		return nil, fmt.Errorf("unable to open img: %v", err)
+	}
+	defer r.Close()
+
+	img, _, err := image.Decode(r)
+	if err != nil {
+		return nil, fmt.Errorf("unable read img: %v", err)
+	}
+
+	return img, nil
+}
 
 // calcAvgRGBm accepts and image and returns the average pixel values for each
 // channel as an 8-bit float64 array.
@@ -73,17 +88,10 @@ func main() {
 	// Profit
 
 	tarImgP := "./input/target/day_man.jpg"
-	reader, err := os.Open(tarImgP)
+	img, err := returnImgFromPath(tarImgP)
 	if err != nil {
-		fmt.Println("can't open img")
+		fmt.Printf("Error Obtaining Img: %v\n", err)
 	}
-	defer reader.Close()
-
-	img, _, err := image.Decode(reader)
-	if err != nil {
-		fmt.Println("can't read img")
-	}
-
 	AvgRGB := calcAvgRGB(img)
 
 	fmt.Printf("%-8s %-8s %-8s\n", "red", "green", "blue")
