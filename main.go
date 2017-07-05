@@ -5,7 +5,9 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 )
 
 // image documentation: https://golang.org/pkg/image/
@@ -144,8 +146,9 @@ func nearestMapping() {
 }
 
 // writeImgToFile is a convenience function that will likely be deleted.
-func writeImgToFile(img image.Image) error {
-	rsImgF, err := os.Create("./output/resizedTarget.png")
+func writeImgToFile(img image.Image, filePath string) error {
+	//rsImgF, err := os.Create()
+	rsImgF, err := os.Create(filePath)
 	if err != nil {
 		fmt.Printf("Error creating img file: %v\n", err)
 	}
@@ -155,7 +158,44 @@ func writeImgToFile(img image.Image) error {
 }
 
 func main() {
+
 	// Read mosaic images to see what values we have to work with.
+	mosDir := "./input/mosaic/PCB_square_png"
+
+	// create directory to hold smaller images (if not exist) 777
+	smallPath := mosDir + "/resized"
+	if _, err := os.Stat(smallPath); os.IsNotExist(err) {
+		os.Mkdir(smallPath, os.ModePerm)
+	}
+
+	oFiles, _ := ioutil.ReadDir(mosDir)
+	//sFiles, _ := ioutil.ReadDir(smallPath)
+	//if len(oFiles) != len(sFiles) {
+	for _, f := range oFiles {
+		fPath := f.Name()
+		ext := filepath.Ext(fPath)
+		key := fPath[0 : len(fPath)-len(ext)]
+
+		if ext == ".png" || ext == ".jpg" {
+			img, err := returnImgFromPath(mosDir + "/" + fPath)
+			if err != nil {
+				fmt.Println(fPath)
+				fmt.Printf("Error Obtaining Img: %v\n", err)
+			}
+
+			rsImg := resizeImage(img, 60, 60)
+			rsPath := smallPath + "/" + fPath
+			writeImgToFile(rsImg, rsPath)
+
+			imgVals := calcAvgRGB(rsImg)
+
+			//fmt.Println(key)
+			fmt.Printf("%-15s (r:%v,g:%v,b:%v)\n", key, uint8(imgVals[0]), uint8(imgVals[1]), uint8(imgVals[2]))
+		}
+
+	}
+	//}
+
 	// X read in
 	// X downsample (resize)
 	// X calculate avg for image
@@ -177,16 +217,16 @@ func main() {
 
 	// Profit
 
-	tarImgP := "./input/target/day_man.png"
+	// tarImgP := "./input/target/day_man.png"
 
-	img, err := returnImgFromPath(tarImgP)
-	if err != nil {
-		fmt.Printf("Error Obtaining Img: %v\n", err)
-	}
+	// img, err := returnImgFromPath(tarImgP)
+	// if err != nil {
+	// 	fmt.Printf("Error Obtaining Img: %v\n", err)
+	// }
 
-	resizedTargetImg := resizeImage(img, 200, 200)
+	// resizedTargetImg := resizeImage(img, 200, 200)
 
-	err = writeImgToFile(resizedTargetImg)
+	// err = writeImgToFile(resizedTargetImg, "./output/resizedTarget.png")
 
 	fmt.Println("yipee")
 }
