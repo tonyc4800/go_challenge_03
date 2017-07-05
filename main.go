@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"image/jpeg"
 	_ "image/jpeg"
 	"os"
 )
@@ -74,8 +75,8 @@ func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
 	// can be mapped into the new image.
 	var xCoords []int
 	var yCoords []int
-	fmt.Printf("wRatio: %v\n", wRatio)
-	fmt.Printf("hRatio: %v\n", hRatio)
+	// fmt.Printf("wRatio: %v\n", wRatio)
+	// fmt.Printf("hRatio: %v\n", hRatio)
 	for y := 0; y < tHeight; y++ {
 
 		// The coordinate value will be cropped to an int value, not rounded.
@@ -100,8 +101,8 @@ func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
 
 	fmt.Printf("Height: %v x %v\n", bounds.Min.Y, bounds.Max.Y)
 	fmt.Printf("Width: %v x %v\n", bounds.Min.X, bounds.Max.X)
-	fmt.Println(xCoords)
-	fmt.Println(yCoords)
+	// fmt.Println(xCoords)
+	// fmt.Println(yCoords)
 
 	// Loop coordinates and create sub images
 	xStart := 0
@@ -168,7 +169,9 @@ func main() {
 		fmt.Printf("Error Obtaining Img: %v\n", err)
 	}
 
-	AvgRGB := calcAvgRGB(img)
+	//AvgRGB := calcAvgRGB(img)
+	// fmt.Printf("%-8s %-8s %-8s\n", "red", "green", "blue")
+	// fmt.Printf("%6.2f %6.2f %6.2f\n", AvgRGB[0], AvgRGB[1], AvgRGB[2])
 
 	// TODO: complete this function.
 	img2 := resizeImage(img, 200, 200)
@@ -177,8 +180,12 @@ func main() {
 	oHeight := bounds.Max.Y - bounds.Min.Y
 	fmt.Printf("newImg: %vx%v", oWidth, oHeight)
 
-	fmt.Printf("%-8s %-8s %-8s\n", "red", "green", "blue")
-	fmt.Printf("%6.2f %6.2f %6.2f\n", AvgRGB[0], AvgRGB[1], AvgRGB[2])
+	rsImg, err := os.Create("./output/rs.jpg")
+	if err != nil {
+		fmt.Printf("Error creating img file: %v\n", err)
+	}
+
+	err = jpeg.Encode(rsImg, img2, nil)
 
 	fmt.Println("yipee")
 }
