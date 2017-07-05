@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"image"
+	"image/color"
 	_ "image/jpeg"
 	"os"
 )
@@ -58,7 +59,10 @@ func calcAvgRGB(img image.Image) [3]float64 {
 // resizeImage accepts and image and target x and y sizes, then resizes and
 // returns the image. Docs: https://golang.org/pkg/image/#NewRGBA
 func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
-	// Ensure target size is under original size.
+	// TODO: Ensure target size is under original size.
+
+	// Create new, resized, image rectangle.
+	rImage := image.NewRGBA(image.Rect(0, 0, tWidth, tHeight))
 
 	bounds := oImg.Bounds()
 	oWidth := bounds.Max.X - bounds.Min.X
@@ -100,28 +104,43 @@ func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
 	fmt.Println(yCoords)
 
 	// Loop coordinates and create sub images
+	xStart := 0
+	yStart := 0
 
-	// for j, yCoord := range yCoords {
-	// 	for i, xCoord := range xCoords {
-	// 		// (i, j) will be the coord for the pix value in the new image.
-	// 		// (xCoord, yCoord)
-	// 	}
-	// }
+	for j, yCoord := range yCoords {
+		for i, xCoord := range xCoords {
+			// (i, j) will be the coord for the pix value in the new image.
+			// (xStart, yStart, xCoord, yCoord)Rect will be the sub image.
+			subImg := image.NewRGBA(image.Rect(xStart, yStart, xCoord, yCoord))
 
-	// Create blank new image.
-	// tempImg := image.NewRGBA(image.Rect(0, 0, tWidth, tHeight))
+			// Fill subimage pixel values.
+			n := 0
+			for yy := yStart; yy <= yCoord; yy++ {
+				m := 0
+				for xx := xStart; xx <= xCoord; xx++ {
+					r, g, b, _ := oImg.At(xx, yy).RGBA()
+					cVal := color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: 255}
+					subImg.SetRGBA(m, n, cVal)
+					m++
+				}
+				n++
+			}
 
-	// for y := bounds.Min.Y; y <= bounds.Max.Y; y = y + hRatio {
-	// 	yCoords = append(yCoords, y)
-	// }
-	// for x := bounds.Min.X; x <= bounds.Max.X; x = x + wRatio {
-	// 	xCoords = append(xCoords, x)
-	// }
+			// Get average value
+			imgVals := calcAvgRGB(subImg)
 
-	// subImg := image.Rect(0, 0, wRatio, hRatio)
-	// pixVal = oImg.At(x, y).RGBA()
-	// subImg[i][j] = pixVal
-	return oImg
+			// Assign value to new image. alpha is hardcoded to 255 since we do
+			// not want a transparent image.
+			cVal := color.RGBA{R: uint8(imgVals[0]), G: uint8(imgVals[1]), B: uint8(imgVals[2]), A: 255}
+			rImage.Set(i, j, cVal)
+
+			// Update coordinate grid.
+			xStart = xCoord
+			yStart = yCoord
+		}
+	}
+
+	return rImage
 }
 
 func main() {
