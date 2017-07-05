@@ -59,7 +59,6 @@ func calcAvgRGB(img image.Image) [3]uint32 {
 	return rgbVals
 }
 
-// TODO: complete this function.
 // resizeImage accepts and image and target x and y sizes, then resizes and
 // returns the image. Docs: https://golang.org/pkg/image/#NewRGBA
 func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
@@ -159,21 +158,32 @@ func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
 	return rImage
 }
 
+// TODO: create this function
+// nearestMapping...
+func nearestMapping() {
+
+}
+
 func main() {
 	// Read mosaic images to see what values we have to work with.
-	// - read in
-	// - downsample (resize)
-	// - calculate avg for image
+	// X read in
+	// X downsample (resize)
+	// X calculate avg for image
 	// - create map mImgIndex:avgPixValue
 
 	// Read in target image to see how we have to map
-	// - read in
-	// - downsample to target size (resize)
+	// X read in
+	// X downsample to target size (resize)
 	// - create map pixIndex:avgPixValue
 
 	// Image Creation
 	// - map mosaic images to target image pixels
 	// - create new image
+
+	// TODO: w/in resize, make sure we write to the final col/row
+
+	// TODO: Create nearest mapping function to map pixel value to nearest
+	// mosaic value.
 
 	// Profit
 
@@ -184,7 +194,6 @@ func main() {
 		fmt.Printf("Error Obtaining Img: %v\n", err)
 	}
 
-	// TODO: complete this function.
 	resizedTargetImg := resizeImage(img, 200, 200)
 	bounds := resizedTargetImg.Bounds()
 	oWidth := bounds.Max.X - bounds.Min.X
