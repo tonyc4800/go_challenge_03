@@ -25,6 +25,7 @@ func returnImgFromPath(imgPath string) (image.Image, error) {
 	return img, nil
 }
 
+// TODO: complete this function.
 // calcAvgRGBm accepts and image and returns the average pixel values for each
 // channel as an 8-bit float64 array.
 func calcAvgRGB(img image.Image) [3]float64 {
@@ -54,16 +55,68 @@ func calcAvgRGB(img image.Image) [3]float64 {
 	return rgbVals
 }
 
+// resizeImage accepts and image and target x and y sizes, then resizes and
+// returns the image. Docs: https://golang.org/pkg/image/#NewRGBA
+func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
+	// Ensure target size is under original size.
+
+	bounds := oImg.Bounds()
+	oWidth := bounds.Max.X - bounds.Min.X
+	oHeight := bounds.Max.Y - bounds.Min.Y
+	wRatio := float64(oWidth) / float64(tWidth)
+	hRatio := float64(oHeight) / float64(tHeight)
+
+	// create a grid of coordinates for subimages from the original image that
+	// can be mapped into the new image.
+	var xCoords []int
+	var yCoords []int
+	fmt.Printf("wRatio: %v\n", wRatio)
+	fmt.Printf("hRatio: %v\n", hRatio)
+	for y := 0; y < tHeight; y++ {
+		i := int(float64(y) * hRatio)
+		yCoords = append(yCoords, i)
+	}
+	for x := 0; x < tWidth; x++ {
+		i := int(float64(x) * wRatio)
+		xCoords = append(xCoords, i)
+	}
+
+	// Replace last value with max original value. NOTE: This will affect the
+	// image quality on the right and upper edges.
+	xCoords[len(xCoords)-1] = bounds.Max.X
+	yCoords[len(yCoords)-1] = bounds.Max.Y
+
+	fmt.Printf("Height: %v x %v\n", bounds.Min.Y, bounds.Max.Y)
+	fmt.Printf("Width: %v x %v\n", bounds.Min.X, bounds.Max.X)
+	fmt.Println(xCoords)
+	fmt.Println(yCoords)
+
+	// Create blank new image.
+	// tempImg := image.NewRGBA(image.Rect(0, 0, tWidth, tHeight))
+
+	// for y := bounds.Min.Y; y <= bounds.Max.Y; y = y + hRatio {
+	// 	yCoords = append(yCoords, y)
+	// }
+	// for x := bounds.Min.X; x <= bounds.Max.X; x = x + wRatio {
+	// 	xCoords = append(xCoords, x)
+	// }
+
+	// subImg := image.Rect(0, 0, wRatio, hRatio)
+	// pixVal = oImg.At(x, y).RGBA()
+	// subImg[i][j] = pixVal
+	return oImg
+}
+
 func main() {
 	// Read mosaic images to see what values we have to work with.
 	// - read in
-	// - downsample
+	// - downsample (resize)
 	// - calculate avg for image
 	// - create map mImgIndex:avgPixValue
 
 	// Read in target image to see how we have to map
 	// - read in
-	// - downsample to target size
+	// - downsample to target size (resize)
 	// - create map pixIndex:avgPixValue
 
 	// Image Creation
@@ -80,6 +133,13 @@ func main() {
 	}
 
 	AvgRGB := calcAvgRGB(img)
+
+	// TODO: complete this function.
+	img2 := resizeImage(img, 200, 200)
+	bounds := img2.Bounds()
+	oWidth := bounds.Max.X - bounds.Min.X
+	oHeight := bounds.Max.Y - bounds.Min.Y
+	fmt.Printf("newImg: %vx%v", oWidth, oHeight)
 
 	fmt.Printf("%-8s %-8s %-8s\n", "red", "green", "blue")
 	fmt.Printf("%6.2f %6.2f %6.2f\n", AvgRGB[0], AvgRGB[1], AvgRGB[2])
