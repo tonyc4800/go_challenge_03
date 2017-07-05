@@ -77,8 +77,7 @@ func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
 	// can be mapped into the new image.
 	var xCoords []int
 	var yCoords []int
-	// fmt.Printf("wRatio: %v\n", wRatio)
-	// fmt.Printf("hRatio: %v\n", hRatio)
+
 	for y := 0; y < tHeight; y++ {
 
 		// The coordinate value will be cropped to an int value, not rounded.
@@ -92,19 +91,13 @@ func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
 		xCoords = append(xCoords, i)
 	}
 
-	// Replace last value with max original value. NOTE: This will affect the
-	// image quality on the right and upper edges.
-	xCoords[len(xCoords)-1] = bounds.Max.X
-	yCoords[len(yCoords)-1] = bounds.Max.Y
+	// Add max original value to the slice.
+	xCoords = append(xCoords, bounds.Max.X)
+	yCoords = append(yCoords, bounds.Max.Y)
 
 	// Remove first value from slice.
 	xCoords = append(xCoords[:0], xCoords[0+1:]...)
 	yCoords = append(yCoords[:0], yCoords[0+1:]...)
-
-	fmt.Printf("Height: %v x %v\n", bounds.Min.Y, bounds.Max.Y)
-	fmt.Printf("Width: %v x %v\n", bounds.Min.X, bounds.Max.X)
-	// fmt.Println(xCoords)
-	// fmt.Println(yCoords)
 
 	// Loop coordinates and create sub images
 	xStart := 0
@@ -119,38 +112,24 @@ func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
 
 			// Fill subimage pixel values.
 			n := 0
-
-			fmt.Println("Subimage values")
-			for yy := yStart; yy < yCoord; yy++ {
-
+			for yy := yStart; yy <= yCoord; yy++ {
 				m := 0
-				for xx := xStart; xx < xCoord; xx++ {
-
+				for xx := xStart; xx <= xCoord; xx++ {
 					r, g, b, _ := oImg.At(xx, yy).RGBA()
-
 					cVal := color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: 255}
-					fmt.Printf("{%v,%v}->{%v,%v}--%v:{%v} %v:{%v} %v:{%v}\n", xx, yy, m, n, "red", cVal.R, "green", cVal.G, "blue", cVal.B)
-					//subImg.SetRGBA(m, n, cVal)
 					subImg.Set(m, n, cVal)
 					m++
 				}
 				n++
 			}
 
-			// Get average value
-			imgVals := calcAvgRGB(subImg)
-
 			// Assign value to new image. alpha is hardcoded to 255 since we do
 			// not want a transparent image.
+			imgVals := calcAvgRGB(subImg)
 			nVal := color.RGBA{R: uint8(imgVals[0]), G: uint8(imgVals[1]), B: uint8(imgVals[2]), A: 255}
-			fmt.Printf("(%v,%v)%v:{%v} %v:{%v} %v:{%v}\n", i, j, "red", nVal.R, "green", nVal.G, "blue", nVal.B)
-			//rImage.SetRGBA(i, j, nVal)
-			//nVal = color.RGBA{R: 42, G: 168, B: 22, A: 255}
 			rImage.Set(i, j, nVal)
 
-			// Update coordinate grid.
 			xStart = xCoord
-			fmt.Println("---------------")
 		}
 		yStart = yCoord
 	}
@@ -162,6 +141,17 @@ func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
 // nearestMapping...
 func nearestMapping() {
 
+}
+
+// writeImgToFile is a convenience function that will likely be deleted.
+func writeImgToFile(img image.Image) error {
+	rsImgF, err := os.Create("./output/resizedTarget.png")
+	if err != nil {
+		fmt.Printf("Error creating img file: %v\n", err)
+	}
+	//defer rsImgF.Close()
+	err = png.Encode(rsImgF, img)
+	return err
 }
 
 func main() {
@@ -195,36 +185,8 @@ func main() {
 	}
 
 	resizedTargetImg := resizeImage(img, 200, 200)
-	bounds := resizedTargetImg.Bounds()
-	oWidth := bounds.Max.X - bounds.Min.X
-	oHeight := bounds.Max.Y - bounds.Min.Y
-	fmt.Printf("resizedTargetImg: %vx%v\n", oWidth, oHeight)
 
-	rsImgF, err := os.Create("./output/resizedTarget.png")
-	if err != nil {
-		fmt.Printf("Error creating img file: %v\n", err)
-	}
-	//defer rsImgF.Close()
-	//jack := jpeg.Options{Quality: 100}
-	//err = jpeg.Encode(rsImgF, resizedTargetImg, &jack)
-	err = png.Encode(rsImgF, resizedTargetImg)
-
-	createdImgF := "./output/resizedTarget.png"
-	readCreatedImg, err := returnImgFromPath(createdImgF)
-	if err != nil {
-		fmt.Printf("Error Obtaining Img: %v\n", err)
-	}
-	readImgBounds := readCreatedImg.Bounds()
-	rsWidth := readImgBounds.Max.X - readImgBounds.Min.X
-	rsHeight := readImgBounds.Max.Y - readImgBounds.Min.Y
-	fmt.Printf("readCreatedImg: %vx%v\n", rsWidth, rsHeight)
-
-	xx := 198
-	yy := 198
-	r, g, b, _ := resizedTargetImg.At(xx, yy).RGBA()
-	fmt.Printf("{%v,%v}--%v:{%v} %v:{%v} %v:{%v}\n", xx, yy, "red", uint8(r), "green", uint8(g), "blue", uint8(b))
-	r, g, b, _ = readCreatedImg.At(xx, yy).RGBA()
-	fmt.Printf("{%v,%v}--%v:{%v} %v:{%v} %v:{%v}\n", xx, yy, "red", uint8(r), "green", uint8(g), "blue", uint8(b))
+	err = writeImgToFile(resizedTargetImg)
 
 	fmt.Println("yipee")
 }
