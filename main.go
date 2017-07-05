@@ -129,7 +129,7 @@ func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
 					r, g, b, _ := oImg.At(xx, yy).RGBA()
 
 					cVal := color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: 255}
-					fmt.Printf("{%v,%v}->{%v,%v}--%v:{%v} %v:{%v} %v:{%v}\n", xx, yy, m, n, "red", uint8(r), "green", uint8(g), "blue", uint8(b))
+					fmt.Printf("{%v,%v}->{%v,%v}--%v:{%v} %v:{%v} %v:{%v}\n", xx, yy, m, n, "red", cVal.R, "green", cVal.G, "blue", cVal.B)
 					subImg.SetRGBA(m, n, cVal)
 					m++
 				}
@@ -142,7 +142,7 @@ func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
 			// Assign value to new image. alpha is hardcoded to 255 since we do
 			// not want a transparent image.
 			nVal := color.RGBA{R: uint8(imgVals[0]), G: uint8(imgVals[1]), B: uint8(imgVals[2]), A: 255}
-			fmt.Printf("(%v,%v)%v:{%v} %v:{%v} %v:{%v}\n", i, j, "red", uint8(imgVals[0]), "green", uint8(imgVals[1]), "blue", uint8(imgVals[2]))
+			fmt.Printf("(%v,%v)%v:{%v} %v:{%v} %v:{%v}\n", i, j, "red", nVal.R, "green", nVal.G, "blue", nVal.B)
 			rImage.SetRGBA(i, j, nVal)
 
 			// Update coordinate grid.
@@ -180,23 +180,36 @@ func main() {
 		fmt.Printf("Error Obtaining Img: %v\n", err)
 	}
 
-	//AvgRGB := calcAvgRGB(img)
-	// fmt.Printf("%-8s %-8s %-8s\n", "red", "green", "blue")
-	// fmt.Printf("%6.2f %6.2f %6.2f\n", AvgRGB[0], AvgRGB[1], AvgRGB[2])
-
 	// TODO: complete this function.
-	img2 := resizeImage(img, 200, 200)
-	bounds := img2.Bounds()
+	resizedTargetImg := resizeImage(img, 200, 200)
+	bounds := resizedTargetImg.Bounds()
 	oWidth := bounds.Max.X - bounds.Min.X
 	oHeight := bounds.Max.Y - bounds.Min.Y
-	fmt.Printf("newImg: %vx%v\n", oWidth, oHeight)
+	fmt.Printf("resizedTargetImg: %vx%v\n", oWidth, oHeight)
 
-	rsImg, err := os.Create("./output/rs.jpg")
+	rsImgF, err := os.Create("./output/resizedTarget.jpg")
 	if err != nil {
 		fmt.Printf("Error creating img file: %v\n", err)
 	}
 
-	err = jpeg.Encode(rsImg, img2, nil)
+	err = jpeg.Encode(rsImgF, resizedTargetImg, nil)
+
+	createdImgF := "./output/resizedTarget.jpg"
+	readCreatedImg, err := returnImgFromPath(createdImgF)
+	if err != nil {
+		fmt.Printf("Error Obtaining Img: %v\n", err)
+	}
+	readImgBounds := readCreatedImg.Bounds()
+	rsWidth := readImgBounds.Max.X - readImgBounds.Min.X
+	rsHeight := readImgBounds.Max.Y - readImgBounds.Min.Y
+	fmt.Printf("readCreatedImg: %vx%v\n", rsWidth, rsHeight)
+
+	xx := 198
+	yy := 198
+	r, g, b, _ := resizedTargetImg.At(xx, yy).RGBA()
+	fmt.Printf("{%v,%v}--%v:{%v} %v:{%v} %v:{%v}\n", xx, yy, "red", uint8(r), "green", uint8(g), "blue", uint8(b))
+	r, g, b, _ = readCreatedImg.At(xx, yy).RGBA()
+	fmt.Printf("{%v,%v}--%v:{%v} %v:{%v} %v:{%v}\n", xx, yy, "red", uint8(r), "green", uint8(g), "blue", uint8(b))
 
 	fmt.Println("yipee")
 }
