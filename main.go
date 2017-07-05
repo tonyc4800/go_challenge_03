@@ -56,24 +56,29 @@ func main() {
 	if err != nil {
 		fmt.Println("can't read img")
 	}
+
 	bounds := img.Bounds()
 
-	var hist [16][3]int
+	// float64 used since we need a floating point.
+	var rgbVal [3]float64
+	var totalPixCount float64
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			r, g, b, _ := img.At(x, y).RGBA()
-			// values in range [0, 65535].
-			// Shifting by 12, reduces range to [0,15].
-			hist[r>>12][0]++
-			hist[g>>12][1]++
-			hist[b>>12][2]++
+			rgbVal[0] = rgbVal[0] + float64(r)
+			rgbVal[1] = rgbVal[1] + float64(g)
+			rgbVal[2] = rgbVal[2] + float64(b)
+			totalPixCount++
 		}
 	}
 
-	fmt.Printf("%-14s %6s %6s %6s\n", "bin", "red", "green", "blue")
-	for i, x := range hist {
-		fmt.Printf("0x%04x-0x%04x: %6d %6d %6d\n", i<<12, (i+1)<<12-1, x[0], x[1], x[2])
-	}
+	// calculate average
+	rgbVal[0] = rgbVal[0] / totalPixCount
+	rgbVal[1] = rgbVal[1] / totalPixCount
+	rgbVal[2] = rgbVal[2] / totalPixCount
+
+	fmt.Printf("%-8s %-8s %-8s\n", "red", "green", "blue")
+	fmt.Printf("%6.2f %6.2f %6.2f\n", rgbVal[0], rgbVal[1], rgbVal[2])
 
 	fmt.Println("yipee")
 }
