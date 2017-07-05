@@ -66,18 +66,20 @@ func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
 	wRatio := float64(oWidth) / float64(tWidth)
 	hRatio := float64(oHeight) / float64(tHeight)
 
-	// create a grid of coordinates for subimages from the original image that
+	// Create a grid of coordinates for subimages from the original image that
 	// can be mapped into the new image.
 	var xCoords []int
 	var yCoords []int
 	fmt.Printf("wRatio: %v\n", wRatio)
 	fmt.Printf("hRatio: %v\n", hRatio)
 	for y := 0; y < tHeight; y++ {
+
 		// The coordinate value will be cropped to an int value, not rounded.
 		i := int(float64(y) * hRatio)
 		yCoords = append(yCoords, i)
 	}
 	for x := 0; x < tWidth; x++ {
+
 		// The coordinate value will be cropped to an int value, not rounded.
 		i := int(float64(x) * wRatio)
 		xCoords = append(xCoords, i)
@@ -88,10 +90,23 @@ func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
 	xCoords[len(xCoords)-1] = bounds.Max.X
 	yCoords[len(yCoords)-1] = bounds.Max.Y
 
+	// Remove first value from slice.
+	xCoords = append(xCoords[:0], xCoords[0+1:]...)
+	yCoords = append(yCoords[:0], yCoords[0+1:]...)
+
 	fmt.Printf("Height: %v x %v\n", bounds.Min.Y, bounds.Max.Y)
 	fmt.Printf("Width: %v x %v\n", bounds.Min.X, bounds.Max.X)
 	fmt.Println(xCoords)
 	fmt.Println(yCoords)
+
+	// Loop coordinates and create sub images
+
+	// for j, yCoord := range yCoords {
+	// 	for i, xCoord := range xCoords {
+	// 		// (i, j) will be the coord for the pix value in the new image.
+	// 		// (xCoord, yCoord)
+	// 	}
+	// }
 
 	// Create blank new image.
 	// tempImg := image.NewRGBA(image.Rect(0, 0, tWidth, tHeight))
