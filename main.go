@@ -5,7 +5,6 @@ import (
 	"image"
 	"image/color"
 	"image/jpeg"
-	_ "image/jpeg"
 	"os"
 )
 
@@ -13,13 +12,14 @@ import (
 
 // returnImgFromPath accepts a file path to a jpeg image and returns the image.
 func returnImgFromPath(imgPath string) (image.Image, error) {
-	r, err := os.Open(imgPath)
+	f, err := os.Open(imgPath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to open img: %v", err)
 	}
-	defer r.Close()
+	defer f.Close()
 
-	img, _, err := image.Decode(r)
+	//img, _, err := image.Decode(r)
+	img, err := jpeg.Decode(f)
 	if err != nil {
 		return nil, fmt.Errorf("unable read img: %v", err)
 	}
@@ -130,7 +130,8 @@ func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
 
 					cVal := color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: 255}
 					fmt.Printf("{%v,%v}->{%v,%v}--%v:{%v} %v:{%v} %v:{%v}\n", xx, yy, m, n, "red", cVal.R, "green", cVal.G, "blue", cVal.B)
-					subImg.SetRGBA(m, n, cVal)
+					//subImg.SetRGBA(m, n, cVal)
+					subImg.Set(m, n, cVal)
 					m++
 				}
 				n++
@@ -143,7 +144,9 @@ func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
 			// not want a transparent image.
 			nVal := color.RGBA{R: uint8(imgVals[0]), G: uint8(imgVals[1]), B: uint8(imgVals[2]), A: 255}
 			fmt.Printf("(%v,%v)%v:{%v} %v:{%v} %v:{%v}\n", i, j, "red", nVal.R, "green", nVal.G, "blue", nVal.B)
-			rImage.SetRGBA(i, j, nVal)
+			//rImage.SetRGBA(i, j, nVal)
+			nVal = color.RGBA{R: 42, G: 168, B: 22, A: 255}
+			rImage.Set(i, j, nVal)
 
 			// Update coordinate grid.
 			xStart = xCoord
@@ -191,7 +194,7 @@ func main() {
 	if err != nil {
 		fmt.Printf("Error creating img file: %v\n", err)
 	}
-
+	//defer rsImgF.Close()
 	err = jpeg.Encode(rsImgF, resizedTargetImg, nil)
 
 	createdImgF := "./output/resizedTarget.jpg"
