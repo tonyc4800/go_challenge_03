@@ -41,9 +41,9 @@ func calcAvgRGB(img image.Image) [3]float64 {
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			r, g, b, _ := img.At(x, y).RGBA()
-			rgbVals[0] = rgbVals[0] + float64(r>>8)
-			rgbVals[1] = rgbVals[1] + float64(g>>8)
-			rgbVals[2] = rgbVals[2] + float64(b>>8)
+			rgbVals[0] = rgbVals[0] + float64(r)
+			rgbVals[1] = rgbVals[1] + float64(g)
+			rgbVals[2] = rgbVals[2] + float64(b)
 			totalPix++
 		}
 	}
@@ -110,17 +110,26 @@ func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
 
 	for j, yCoord := range yCoords {
 		for i, xCoord := range xCoords {
+
 			// (i, j) will be the coord for the pix value in the new image.
 			// (xStart, yStart, xCoord, yCoord)Rect will be the sub image.
-			subImg := image.NewRGBA(image.Rect(xStart, yStart, xCoord, yCoord))
+			subImg := image.NewRGBA(image.Rect(0, 0, xCoord-xStart, yCoord-yStart))
+			//jbounds := subImg.Bounds()
+			//fmt.Printf("Height: %v x %v\n", jbounds.Min.Y, jbounds.Max.Y)
+			//fmt.Printf("Width: %v x %v\n", jbounds.Min.X, jbounds.Max.X)
 
 			// Fill subimage pixel values.
 			n := 0
-			for yy := yStart; yy <= yCoord; yy++ {
+
+			for yy := yStart; yy < yCoord; yy++ {
+
 				m := 0
-				for xx := xStart; xx <= xCoord; xx++ {
+				for xx := xStart; xx < xCoord; xx++ {
 					r, g, b, _ := oImg.At(xx, yy).RGBA()
+
+					//fmt.Printf("%v:{%v} %v:{%v} %v:{%v}\n", "red", uint8(r), "green", uint8(g), "blue", uint8(b))
 					cVal := color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: 255}
+					//fmt.Printf("{%v,%v}\n", m, n)
 					subImg.SetRGBA(m, n, cVal)
 					m++
 				}
@@ -129,16 +138,19 @@ func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
 
 			// Get average value
 			imgVals := calcAvgRGB(subImg)
+			//fmt.Printf("%v:{%v} %v:{%v} %v:{%v}\n", "red", uint8(imgVals[0]), "green", uint8(imgVals[1]), "blue", uint8(imgVals[2]))
 
 			// Assign value to new image. alpha is hardcoded to 255 since we do
 			// not want a transparent image.
 			cVal := color.RGBA{R: uint8(imgVals[0]), G: uint8(imgVals[1]), B: uint8(imgVals[2]), A: 255}
+			fmt.Printf("(%v,%v)%v:{%v} %v:{%v} %v:{%v}\n", i, j, "red", uint8(imgVals[0]), "green", uint8(imgVals[1]), "blue", uint8(imgVals[2]))
 			rImage.Set(i, j, cVal)
 
 			// Update coordinate grid.
 			xStart = xCoord
-			yStart = yCoord
+			//fmt.Println("---------------")
 		}
+		yStart = yCoord
 	}
 
 	return rImage
@@ -178,7 +190,7 @@ func main() {
 	bounds := img2.Bounds()
 	oWidth := bounds.Max.X - bounds.Min.X
 	oHeight := bounds.Max.Y - bounds.Min.Y
-	fmt.Printf("newImg: %vx%v", oWidth, oHeight)
+	fmt.Printf("newImg: %vx%v\n", oWidth, oHeight)
 
 	rsImg, err := os.Create("./output/rs.jpg")
 	if err != nil {
