@@ -157,11 +157,7 @@ func writeImgToFile(img image.Image, filePath string) error {
 	return err
 }
 
-func main() {
-
-	// Read mosaic images to see what values we have to work with.
-	mosDir := "./input/mosaic/PCB_square_png"
-
+func createMosaicMapping(mosDir string) map[string][3]uint8 {
 	// create directory to hold smaller images (if not exist) 777
 	smallPath := mosDir + "/resized"
 	if _, err := os.Stat(smallPath); os.IsNotExist(err) {
@@ -192,8 +188,16 @@ func main() {
 			mosMap[key] = mVal
 
 		}
-
 	}
+
+	return mosMap
+}
+
+func main() {
+
+	// Read mosaic images to see what values we have to work with.
+	mosDir := "./input/mosaic/PCB_square_png"
+	mosMap := createMosaicMapping(mosDir)
 
 	// LOOK INTO: can a map be written to a file?
 
