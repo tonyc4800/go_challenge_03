@@ -168,9 +168,9 @@ func main() {
 		os.Mkdir(smallPath, os.ModePerm)
 	}
 
+	mosMap := make(map[string][3]uint8)
 	oFiles, _ := ioutil.ReadDir(mosDir)
-	//sFiles, _ := ioutil.ReadDir(smallPath)
-	//if len(oFiles) != len(sFiles) {
+
 	for _, f := range oFiles {
 		fPath := f.Name()
 		ext := filepath.Ext(fPath)
@@ -188,13 +188,18 @@ func main() {
 			writeImgToFile(rsImg, rsPath)
 
 			imgVals := calcAvgRGB(rsImg)
+			mVal := [3]uint8{uint8(imgVals[0]), uint8(imgVals[1]), uint8(imgVals[2])}
+			mosMap[key] = mVal
 
-			//fmt.Println(key)
-			fmt.Printf("%-15s (r:%v,g:%v,b:%v)\n", key, uint8(imgVals[0]), uint8(imgVals[1]), uint8(imgVals[2]))
 		}
 
 	}
-	//}
+
+	// LOOK INTO: can a map be written to a file?
+
+	for k, v := range mosMap {
+		fmt.Println("Key:", k, "Value:", v)
+	}
 
 	// X read in
 	// X downsample (resize)
