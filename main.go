@@ -200,16 +200,23 @@ func main() {
 	mosDir := "./input/mosaic/PCB_square_png"
 	mosMap := createMosaicMapping(mosDir)
 
+	const resizeWidth int = 120
+	const resizeHeight int = 120
+
 	// LOOK INTO: can a map be written to a file?
 
-	tarImgP := "./input/target/day_man.png"
+	fileName := "day_man.png"
+	//fileName := "boris_squat.png"
+	tarImgP := "./input/target/"
+	tarImgP = tarImgP + fileName
+	//tarImgP := "./input/target/boris_squat.png"
 
 	img, err := returnImgFromPath(tarImgP)
 	if err != nil {
 		fmt.Printf("Error Obtaining Img: %v\n", err)
 	}
 
-	resizedTargetImg := resizeImage(img, 120, 120)
+	resizedTargetImg := resizeImage(img, resizeWidth, resizeHeight)
 
 	bounds := resizedTargetImg.Bounds()
 	rsWidth := bounds.Max.X - bounds.Min.X
@@ -217,7 +224,7 @@ func main() {
 
 	// Loop resized image and map a mosaic value to the pixel value.
 	//mosKeyMap := [120 * 35][120 * 35]string{}
-	mosKeyMap := [120][120]string{}
+	mosKeyMap := [resizeWidth][resizeHeight]string{}
 	track := 0
 	for j := 0; j < rsHeight; j++ {
 		for i := 0; i < rsWidth; i++ {
@@ -260,7 +267,7 @@ func main() {
 		}
 	}
 
-	finalImage := image.NewRGBA(image.Rect(0, 0, 120*35, 120*35))
+	finalImage := image.NewRGBA(image.Rect(0, 0, resizeWidth*35, resizeHeight*35))
 	fbounds := finalImage.Bounds()
 	fWidth := fbounds.Max.X - fbounds.Min.X
 	fHeight := fbounds.Max.Y - fbounds.Min.Y
@@ -297,9 +304,9 @@ func main() {
 	t := 0
 	// Loop the new mosaic image from lower left to upper right. (i, j) will be
 	// used to access the resized target image.
-	for j := 0; j < 120; j++ {
+	for j := 0; j < resizeWidth; j++ {
 
-		for i := 0; i < 120; i++ {
+		for i := 0; i < resizeHeight; i++ {
 			t = 35 * j
 
 			curPath := mosKeyMap[i][j]
@@ -340,7 +347,8 @@ func main() {
 		fmt.Println("Error writing the resized target image to file")
 	}
 
-	err = writeImgToFile(finalImage, "./output/mosaic_img.png")
+	outPath := "./output/" + fileName
+	err = writeImgToFile(finalImage, outPath)
 	if err != nil {
 		fmt.Println("Error writing the final mosaic image to file")
 	}
