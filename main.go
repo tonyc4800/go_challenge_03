@@ -58,58 +58,59 @@ func calcAvgRGB(img image.Image) [3]uint32 {
 
 // resizeImage accepts and image and target width and height sizes, then resizes
 // and returns the image.
-func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
+func resizeImage(oImg image.Image, tW int, tH int) image.Image {
 
-	// Create new, resized, image rectangle.
-	rImage := image.NewRGBA(image.Rect(0, 0, tWidth, tHeight))
-
+	// Create new, resized, image rectangle and obtain the ratio need to
+	// scale the original image down into the target image.  The ratio is used
+	// to define subimage pixel bounds on the original image.
+	rsImg := image.NewRGBA(image.Rect(0, 0, tW, tH))
 	bounds := oImg.Bounds()
-	oWidth := bounds.Max.X - bounds.Min.X
-	oHeight := bounds.Max.Y - bounds.Min.Y
-	wRatio := float64(oWidth) / float64(tWidth)
-	hRatio := float64(oHeight) / float64(tHeight)
+	oW := bounds.Max.X - bounds.Min.X
+	oH := bounds.Max.Y - bounds.Min.Y
+	wRatio := float64(oW) / float64(tW)
+	hRatio := float64(oH) / float64(tH)
 
-	// Create a grid of coordinates for subimages from the original image that
-	// can be mapped into the new image.
-	var xCoords []int
-	var yCoords []int
+	// Create a grid of upper right/bounding coordinates for subimages from the
+	// original image that can be mapped into the new image. Coordinate values
+	// will be cropped to an int value, not rounded.
+	var yBoundsU []int
+	var xBoundsU []int
 
-	for y := 0; y < tHeight; y++ {
-
-		// The coordinate value will be cropped to an int value, not rounded.
+	// Do not loop until the target height and width since we are multiplying
+	// the upper bound by the ratio.  The original max value will be added to
+	// appended the the slice after looping.
+	for y := 0; y < tH; y++ {
 		i := int(float64(y) * hRatio)
-		yCoords = append(yCoords, i)
+		yBoundsU = append(yBoundsU, i)
 	}
-	for x := 0; x < tWidth; x++ {
+	yBoundsU = append(yBoundsU, bounds.Max.Y)
 
-		// The coordinate value will be cropped to an int value, not rounded.
+	for x := 0; x < tW; x++ {
 		i := int(float64(x) * wRatio)
-		xCoords = append(xCoords, i)
+		xBoundsU = append(xBoundsU, i)
 	}
+	xBoundsU = append(xBoundsU, bounds.Max.X)
 
-	// Add max original value to the slice.
-	xCoords = append(xCoords, bounds.Max.X)
-	yCoords = append(yCoords, bounds.Max.Y)
+	// Remove first value from slice since it is not an upper bound.
+	xBoundsU = append(xBoundsU[:0], xBoundsU[0+1:]...)
+	yBoundsU = append(yBoundsU[:0], yBoundsU[0+1:]...)
 
-	// Remove first value from slice.
-	xCoords = append(xCoords[:0], xCoords[0+1:]...)
-	yCoords = append(yCoords[:0], yCoords[0+1:]...)
-
-	// Loop coordinates and create sub images
-	xStart := 0
-	yStart := 0
-	for j, yCoord := range yCoords {
-		for i, xCoord := range xCoords {
+	// Create sub images from the original image.  The subimage bounds are
+	// contained by a rectangle defined as (xBoundL, yBoundL, xBoundU, yBoundU).
+	xBoundL := 0
+	yBoundL := 0
+	for j, yBoundU := range yBoundsU {
+		for i, xBoundU := range xBoundsU {
 
 			// (i, j) will be the coordinates for the pix value in the new image
-			// and (xStart, yStart, xCoord, yCoord) will describe the sub image.
-			subImg := image.NewRGBA(image.Rect(0, 0, xCoord-xStart, yCoord-yStart))
+			// and (xBoundL, yBoundL, xBoundU, yBoundU) will describe the sub image.
+			subImg := image.NewRGBA(image.Rect(0, 0, xBoundU-xBoundL, yBoundU-yBoundL))
 
 			// Fill subimage pixel values.
 			n := 0
-			for yy := yStart; yy <= yCoord; yy++ {
+			for yy := yBoundL; yy <= yBoundU; yy++ {
 				m := 0
-				for xx := xStart; xx <= xCoord; xx++ {
+				for xx := xBoundL; xx <= xBoundU; xx++ {
 					r, g, b, _ := oImg.At(xx, yy).RGBA()
 					cVal := color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: 255}
 					subImg.Set(m, n, cVal)
@@ -122,13 +123,13 @@ func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
 			// not want a transparent image.
 			imgVals := calcAvgRGB(subImg)
 			nVal := color.RGBA{R: uint8(imgVals[0]), G: uint8(imgVals[1]), B: uint8(imgVals[2]), A: 255}
-			rImage.Set(i, j, nVal)
-			xStart = xCoord
+			rsImg.Set(i, j, nVal)
+			xBoundL = xBoundU
 		}
-		yStart = yCoord
+		yBoundL = yBoundU
 	}
 
-	return rImage
+	return rsImg
 }
 
 // TODO: create this function
@@ -154,37 +155,37 @@ func writeImgToFile(img image.Image, filePath string) error {
 	return nil
 }
 
-func createMosaicMapping(mosDir string, resizeMosW int, resizeMosH int) map[string][3]uint8 {
+func createMosaicMapping(mosDir string, rsMosW int, rsMosH int) map[string][3]uint8 {
 
-	// Create directory to hold smaller images (if not exist) 777.
-	smallPath := mosDir + "/resized"
-	if _, err := os.Stat(smallPath); os.IsNotExist(err) {
-		os.Mkdir(smallPath, os.ModePerm)
+	// Create directory to hold smaller images (if not exist) os.ModePerm is
+	// equivalent to unix permissions `777`.
+	rsDir := mosDir + "/resized"
+	if _, err := os.Stat(rsDir); os.IsNotExist(err) {
+		os.Mkdir(rsDir, os.ModePerm)
 	}
 
 	mosMap := make(map[string][3]uint8)
-	oFiles, _ := ioutil.ReadDir(mosDir)
+	mosFiles, _ := ioutil.ReadDir(mosDir)
 
-	for _, f := range oFiles {
+	for _, f := range mosFiles {
 		fPath := f.Name()
 		ext := filepath.Ext(fPath)
 		key := fPath[0 : len(fPath)-len(ext)]
 
-		if ext == ".png" || ext == ".jpg" {
+		if ext == ".png" {
 			img, err := returnImgFromPath(mosDir + "/" + fPath)
 			if err != nil {
 				fmt.Println(fPath)
 				fmt.Printf("Error Obtaining Img: %v\n", err)
 			}
 
-			rsImg := resizeImage(img, resizeMosW, resizeMosH)
-			rsPath := smallPath + "/" + fPath
+			rsImg := resizeImage(img, rsMosW, rsMosH)
+			rsPath := rsDir + "/" + fPath
 			writeImgToFile(rsImg, rsPath)
 
 			imgVals := calcAvgRGB(rsImg)
 			mVal := [3]uint8{uint8(imgVals[0]), uint8(imgVals[1]), uint8(imgVals[2])}
 			mosMap[key] = mVal
-
 		}
 	}
 
@@ -196,38 +197,36 @@ func main() {
 	// Read mosaic images to see what values we have to work with.
 	mosDir := "./input/mosaic/PCB_square_png"
 
-	const resizeWidth int = 120
-	const resizeHeight int = 120
-	const resizeMosW int = 35
-	const resizeMosH int = 35
+	const rsTarW int = 120
+	const rsTarH int = 120
+	const rsMosW int = 35
+	const rsMosH int = 35
 
-	mosMap := createMosaicMapping(mosDir, resizeMosH, resizeMosW)
+	mosMap := createMosaicMapping(mosDir, rsMosH, rsMosW)
 
-	// LOOK INTO: can a map be written to a file?
-
-	fileName := "day_man.png"
-	//fileName := "boris_squat.png"
-
-	tarImgP := "./input/target/"
-	tarImgP = tarImgP + fileName
+	tarImgDir := "./input/target/"
+	tarName := "day_man.png"
+	//tarName := "boris_squat.png"
+	tarImgP := tarImgDir + tarName
 
 	img, err := returnImgFromPath(tarImgP)
 	if err != nil {
 		fmt.Printf("Error Obtaining Img: %v\n", err)
 	}
 
-	resizedTargetImg := resizeImage(img, resizeWidth, resizeHeight)
-
-	bounds := resizedTargetImg.Bounds()
-	rsWidth := bounds.Max.X - bounds.Min.X
-	rsHeight := bounds.Max.Y - bounds.Min.Y
+	rsTarImg := resizeImage(img, rsTarW, rsTarH)
 
 	// Loop resized image and map a mosaic value to the pixel value.
-	mosKeyMap := [resizeWidth][resizeHeight]string{}
+	mosKeyMap := [rsTarW][rsTarH]string{}
+	bounds := rsTarImg.Bounds()
 	track := 0
-	for j := 0; j < rsHeight; j++ {
-		for i := 0; i < rsWidth; i++ {
-			r, g, b, _ := resizedTargetImg.At(i, j).RGBA()
+
+	// Loop resized image columns (height).
+	for j := 0; j < (bounds.Max.Y - bounds.Min.Y); j++ {
+
+		// Loop resized image columns (width).
+		for i := 0; i < (bounds.Max.X - bounds.Min.X); i++ {
+			r, g, b, _ := rsTarImg.At(i, j).RGBA()
 			var mosaicN string
 			closest := math.MaxFloat64
 			for k, v := range mosMap {
@@ -240,34 +239,27 @@ func main() {
 				rd := math.Pow((float64(R) - float64(uint8(r))), 2)
 				gd := math.Pow((float64(G) - float64(uint8(g))), 2)
 				bd := math.Pow((float64(B) - float64(uint8(b))), 2)
-
 				d := rd + gd + bd
 				if d < closest {
 					closest = d
 					mosaicN = k
 				}
-
 			}
 			mosKeyMap[i][j] = mosaicN
 			track++
 		}
 	}
 
-	finalImage := image.NewRGBA(image.Rect(0, 0, resizeWidth*resizeMosW, resizeHeight*resizeMosH))
-	//fbounds := finalImage.Bounds()
-	//fWidth := fbounds.Max.X - fbounds.Min.X
-	//fHeight := fbounds.Max.Y - fbounds.Min.Y
+	finalImage := image.NewRGBA(image.Rect(0, 0, rsTarW*rsMosW, rsTarH*rsMosH))
 
 	// Loop the new mosaic image from lower left to upper right. (i, j) will be
 	// used to access the resized target image. (s, t) will be used to access
 	// the final image.
 	s := 0
 	t := 0
-	for j := 0; j < resizeHeight; j++ {
-
-		for i := 0; i < resizeWidth; i++ {
-			t = resizeMosH * j
-
+	for j := 0; j < rsTarH; j++ {
+		for i := 0; i < rsTarW; i++ {
+			t = rsMosH * j
 			curPath := mosKeyMap[i][j]
 			curImg, err := returnImgFromPath("./input/mosaic/PCB_square_png" + "/resized/" + curPath + ".png")
 			if err != nil {
@@ -277,9 +269,9 @@ func main() {
 			// Fill the current location with cooresponding pixel information
 			// from the mosaic tile information (m,n) will be used to loop the
 			// current mosaic photo.
-			for n := 0; n < resizeMosH; n++ {
-				s = resizeMosW * i
-				for m := 0; m < resizeMosW; m++ {
+			for n := 0; n < rsMosH; n++ {
+				s = rsMosW * i
+				for m := 0; m < rsMosW; m++ {
 					r, g, b, _ := curImg.At(m, n).RGBA()
 					cVal := color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: 255}
 					finalImage.Set(s, t, cVal)
@@ -287,18 +279,16 @@ func main() {
 				}
 				t++
 			}
-
 		}
-
-		fmt.Printf("col complete: %v of %v\n", j, resizeHeight)
+		fmt.Printf("col complete: %v of %v\n", j, rsTarH)
 	}
 
-	err = writeImgToFile(resizedTargetImg, "./output/resizedTarget.png")
+	err = writeImgToFile(rsTarImg, "./output/resizedTarget.png")
 	if err != nil {
 		fmt.Println("Error writing the resized target image to file")
 	}
 
-	outPath := "./output/" + fileName
+	outPath := "./output/" + tarName
 	err = writeImgToFile(finalImage, outPath)
 	if err != nil {
 		fmt.Println("Error writing the final mosaic image to file")
