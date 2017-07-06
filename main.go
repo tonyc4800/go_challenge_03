@@ -6,6 +6,7 @@ import (
 	"image/color"
 	"image/png"
 	"io/ioutil"
+	"math"
 	"os"
 	"path/filepath"
 )
@@ -214,23 +215,37 @@ func main() {
 	rsWidth := bounds.Max.X - bounds.Min.X
 	rsHeight := bounds.Max.Y - bounds.Min.Y
 
-	// loop resized image
+	// Loop resized image and map a mosaic value to the pixel value.
+	track := 0
 	for j := 0; j <= rsHeight; j++ {
 		for i := 0; i <= rsWidth; i++ {
 			r, g, b, _ := resizedTargetImg.At(i, j).RGBA()
+			var mosaicN string
+			closest := math.MaxFloat64
 			for k, v := range mosMap {
 				R := v[0]
 				G := v[1]
 				B := v[2]
-				// calculate 3d distance
-				fmt.Printf("%v:(R:%v, G:%v, B:%v)\n", k, R, G, B)
+				//fmt.Printf("%v:(R:%v, G:%v, B:%v)\n", k, R, G, B)
 
-				// weighted approach (since eyes are more sensitive to G than B)
-				// can remove squareroot
+				// calculate nearest mosaic - weighted approach (since eyes are
+				// more sensitive to G than B) -- 0.3, 0.59, 0.11 are magic
+				// numbers referenced here:
+				// `https://en.wikipedia.org/wiki/Luma_(video)`. The squareroot
+				// is removed for optimization since we don't care what the
+				// value of d is.
+				rd := math.Pow((float64(R-uint8(r)) * 0.3), 2)
+				gd := math.Pow((float64(G-uint8(g)) * 0.59), 2)
+				bd := math.Pow((float64(B-uint8(b)) * 0.11), 2)
+				d := rd + gd + bd
+				if d < closest {
+					closest = d
+					mosaicN = k
+				}
 
 			}
-
-			fmt.Printf("(r:%v, g:%v, b:%v)\n", r, g, b)
+			fmt.Printf("%v, %v, (%v, %v, %v)->(%v, %v, %v)\n", track, mosaicN, mosMap[mosaicN][0], mosMap[mosaicN][1], mosMap[mosaicN][2], uint8(r), uint8(g), uint8(b))
+			track++
 		}
 	}
 
