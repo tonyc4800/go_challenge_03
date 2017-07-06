@@ -180,7 +180,7 @@ func createMosaicMapping(mosDir string) map[string][3]uint8 {
 				fmt.Printf("Error Obtaining Img: %v\n", err)
 			}
 
-			rsImg := resizeImage(img, 60, 60)
+			rsImg := resizeImage(img, 35, 35)
 			rsPath := smallPath + "/" + fPath
 			writeImgToFile(rsImg, rsPath)
 
@@ -209,7 +209,7 @@ func main() {
 		fmt.Printf("Error Obtaining Img: %v\n", err)
 	}
 
-	resizedTargetImg := resizeImage(img, 200, 200)
+	resizedTargetImg := resizeImage(img, 120, 120)
 
 	bounds := resizedTargetImg.Bounds()
 	rsWidth := bounds.Max.X - bounds.Min.X
@@ -255,7 +255,7 @@ func main() {
 	// - map mosaic images to target image pixels (distance function)
 	// - create new image, write to file
 
-	//err = writeImgToFile(resizedTargetImg, "./output/resizedTarget.png")
+	err = writeImgToFile(resizedTargetImg, "./output/resizedTarget.png")
 
 	// TODO: Create nearest mapping function to map pixel value to nearest
 	// mosaic value.
