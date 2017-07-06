@@ -28,8 +28,8 @@ func returnImgFromPath(imgPath string) (image.Image, error) {
 	return img, nil
 }
 
-// calcAvgRGBm accepts and image and returns the average pixel values for each
-// channel as an 8-bit float64 array.
+// calcAvgRGB accepts and image and returns the average pixel values for each
+// channel as an three value array (RGB).
 func calcAvgRGB(img image.Image) [3]uint32 {
 	bounds := img.Bounds()
 	rgbS := [3]uint32{0, 0, 0}
