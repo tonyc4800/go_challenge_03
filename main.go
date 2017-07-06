@@ -97,9 +97,10 @@ func resizeImage(oImg image.Image, tW int, tH int) image.Image {
 
 	// Create sub images from the original image.  The subimage bounds are
 	// contained by a rectangle defined as (xBoundL, yBoundL, xBoundU, yBoundU).
-	xBoundL := 0
+
 	yBoundL := 0
 	for j, yBoundU := range yBoundsU {
+		xBoundL := 0
 		for i, xBoundU := range xBoundsU {
 
 			// (i, j) will be the coordinates for the pix value in the new image
@@ -197,16 +198,17 @@ func main() {
 	// Read mosaic images to see what values we have to work with.
 	mosDir := "./input/mosaic/PCB_square_png"
 
-	const rsTarW int = 120
-	const rsTarH int = 120
+	const rsTarW int = 300
+	const rsTarH int = 300
 	const rsMosW int = 35
 	const rsMosH int = 35
 
 	mosMap := createMosaicMapping(mosDir, rsMosH, rsMosW)
 
 	tarImgDir := "./input/target/"
-	tarName := "day_man.png"
+	//tarName := "day_man.png"
 	//tarName := "boris_squat.png"
+	tarName := "abby_jack.png"
 	tarImgP := tarImgDir + tarName
 
 	img, err := returnImgFromPath(tarImgP)
@@ -219,7 +221,6 @@ func main() {
 	// Loop resized image and map a mosaic value to the pixel value.
 	mosKeyMap := [rsTarW][rsTarH]string{}
 	bounds := rsTarImg.Bounds()
-	track := 0
 
 	// Loop resized image columns (height).
 	for j := 0; j < (bounds.Max.Y - bounds.Min.Y); j++ {
@@ -246,7 +247,6 @@ func main() {
 				}
 			}
 			mosKeyMap[i][j] = mosaicN
-			track++
 		}
 	}
 
@@ -280,7 +280,7 @@ func main() {
 				t++
 			}
 		}
-		fmt.Printf("col complete: %v of %v\n", j, rsTarH)
+		fmt.Printf("col complete: %v of %v\n", j+1, rsTarH)
 	}
 
 	err = writeImgToFile(rsTarImg, "./output/resizedTarget.png")
