@@ -201,41 +201,51 @@ func main() {
 
 	// LOOK INTO: can a map be written to a file?
 
-	for k, v := range mosMap {
-		fmt.Println("Key:", k, "Value:", v)
+	tarImgP := "./input/target/day_man.png"
+
+	img, err := returnImgFromPath(tarImgP)
+	if err != nil {
+		fmt.Printf("Error Obtaining Img: %v\n", err)
 	}
 
-	// X read in
-	// X downsample (resize)
-	// X calculate avg for image
-	// - create map mImgIndex:avgPixValue
+	resizedTargetImg := resizeImage(img, 200, 200)
 
-	// Read in target image to see how we have to map
-	// X read in
-	// X downsample to target size (resize)
+	bounds := resizedTargetImg.Bounds()
+	rsWidth := bounds.Max.X - bounds.Min.X
+	rsHeight := bounds.Max.Y - bounds.Min.Y
+
+	// loop resized image
+	for j := 0; j <= rsHeight; j++ {
+		for i := 0; i <= rsWidth; i++ {
+			r, g, b, _ := resizedTargetImg.At(i, j).RGBA()
+			for k, v := range mosMap {
+				R := v[0]
+				G := v[1]
+				B := v[2]
+				// calculate 3d distance
+				fmt.Printf("%v:(R:%v, G:%v, B:%v)\n", k, R, G, B)
+
+				// weighted approach (since eyes are more sensitive to G than B)
+				// can remove squareroot
+
+			}
+
+			fmt.Printf("(r:%v, g:%v, b:%v)\n", r, g, b)
+		}
+	}
+
 	// - create map pixIndex:avgPixValue
 
 	// Image Creation
-	// - map mosaic images to target image pixels
-	// - create new image
+	// - map mosaic images to target image pixels (distance function)
+	// - create new image, write to file
 
-	// TODO: w/in resize, make sure we write to the final col/row
+	//err = writeImgToFile(resizedTargetImg, "./output/resizedTarget.png")
 
 	// TODO: Create nearest mapping function to map pixel value to nearest
 	// mosaic value.
 
 	// Profit
-
-	// tarImgP := "./input/target/day_man.png"
-
-	// img, err := returnImgFromPath(tarImgP)
-	// if err != nil {
-	// 	fmt.Printf("Error Obtaining Img: %v\n", err)
-	// }
-
-	// resizedTargetImg := resizeImage(img, 200, 200)
-
-	// err = writeImgToFile(resizedTargetImg, "./output/resizedTarget.png")
 
 	fmt.Println("yipee")
 }
