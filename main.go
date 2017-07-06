@@ -216,6 +216,7 @@ func main() {
 	rsHeight := bounds.Max.Y - bounds.Min.Y
 
 	// Loop resized image and map a mosaic value to the pixel value.
+	mosKeyMap := [120 * 35][120 * 35]string{}
 	track := 0
 	for j := 0; j <= rsHeight; j++ {
 		for i := 0; i <= rsWidth; i++ {
@@ -244,12 +245,44 @@ func main() {
 				}
 
 			}
-			fmt.Printf("%v, %v, (%v, %v, %v)->(%v, %v, %v)\n", track, mosaicN, mosMap[mosaicN][0], mosMap[mosaicN][1], mosMap[mosaicN][2], uint8(r), uint8(g), uint8(b))
+			mosKeyMap[i][j] = mosaicN
+			//fmt.Printf("%v, %v, (%v, %v, %v)->(%v, %v, %v)\n", track, mosaicN, mosMap[mosaicN][0], mosMap[mosaicN][1], mosMap[mosaicN][2], uint8(r), uint8(g), uint8(b))
 			track++
 		}
 	}
 
-	// - create map pixIndex:avgPixValue
+	finalImage := image.NewRGBA(image.Rect(0, 0, 120*35, 120*35))
+	fbounds := finalImage.Bounds()
+	fWidth := fbounds.Max.X - fbounds.Min.X
+	fHeight := fbounds.Max.Y - fbounds.Min.Y
+	fmt.Printf("%v x %v\n", fWidth, fHeight)
+
+	// multiply key to occupy entire new image
+	// or be clever and include *factor in assignment
+	// TODO: fix this mess
+	for i := 0; i < fbounds.Max.X; i++ {
+		for j := 0; j < fbounds.Max.Y; j++ {
+			curPath := mosKeyMap[i][j]
+			// open image
+			curImg, err := returnImgFromPath("./input/mosaic/PCB_square_png" + "/resized" + curPath + ".png")
+			if err != nil {
+				fmt.Printf("Error: unable to open mosaic")
+			}
+			for n := 0; n < 35; n++ {
+				for m := 0; m < 35; m++ {
+					r, g, b, _ := curImg.At(m, n).RGBA()
+					cVal := color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: 255}
+					finalImage.Set(i, j, cVal)
+				}
+			}
+
+			// Copy current image into the new rectangle
+
+			// copy into new img
+			// save new image
+		}
+	}
+	//fmt.Println(mosKeyMap)
 
 	// Image Creation
 	// - map mosaic images to target image pixels (distance function)
