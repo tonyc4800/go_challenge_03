@@ -216,10 +216,11 @@ func main() {
 	rsHeight := bounds.Max.Y - bounds.Min.Y
 
 	// Loop resized image and map a mosaic value to the pixel value.
-	mosKeyMap := [120 * 35][120 * 35]string{}
+	//mosKeyMap := [120 * 35][120 * 35]string{}
+	mosKeyMap := [120][120]string{}
 	track := 0
-	for j := 0; j <= rsHeight; j++ {
-		for i := 0; i <= rsWidth; i++ {
+	for j := 0; j < rsHeight; j++ {
+		for i := 0; i < rsWidth; i++ {
 			r, g, b, _ := resizedTargetImg.At(i, j).RGBA()
 			var mosaicN string
 			closest := math.MaxFloat64
@@ -229,24 +230,32 @@ func main() {
 				B := v[2]
 				//fmt.Printf("%v:(R:%v, G:%v, B:%v)\n", k, R, G, B)
 
-				// calculate nearest mosaic - weighted approach (since eyes are
-				// more sensitive to G than B) -- 0.3, 0.59, 0.11 are magic
-				// numbers referenced here:
-				// `https://en.wikipedia.org/wiki/Luma_(video)`. The squareroot
-				// is removed for optimization since we don't care what the
-				// value of d is.
-				rd := math.Pow((float64(R-uint8(r)) * 0.3), 2)
-				gd := math.Pow((float64(G-uint8(g)) * 0.59), 2)
-				bd := math.Pow((float64(B-uint8(b)) * 0.11), 2)
+				// calculate nearest mosaic The squareroot is removed for
+				// optimization since we don't care what the value of d is.
+
+				rd := math.Pow((float64(R) - float64(uint8(r))), 2)
+				gd := math.Pow((float64(G) - float64(uint8(g))), 2)
+				bd := math.Pow((float64(B) - float64(uint8(b))), 2)
+				// if i == 21 && j == 21 {
+				// 	fmt.Printf("R:%v, float64(R):%v\n", R, float64(R))
+				// 	fmt.Printf("R:%v, float64(R):%v\n", r, float64(r))
+				// 	fmt.Printf("rd:%v, gd:%v, bd:%v\n", rd, gd, bd)
+				// }
 				d := rd + gd + bd
 				if d < closest {
 					closest = d
 					mosaicN = k
 				}
+				// if i == 0 && j == 0 {
+				// 	fmt.Printf("[k:%v]d = %v\n", k, d)
+				// }
 
 			}
 			mosKeyMap[i][j] = mosaicN
-			//fmt.Printf("%v, %v, (%v, %v, %v)->(%v, %v, %v)\n", track, mosaicN, mosMap[mosaicN][0], mosMap[mosaicN][1], mosMap[mosaicN][2], uint8(r), uint8(g), uint8(b))
+			// if i == 0 {
+			// 	fmt.Printf("%v:[%v,%v] - %v = (%v, %v, %v)->(%v, %v, %v)\n", track, i, j, mosaicN, mosMap[mosaicN][0], mosMap[mosaicN][1], mosMap[mosaicN][2], uint8(r), uint8(g), uint8(b))
+			// }
+
 			track++
 		}
 	}
@@ -260,28 +269,66 @@ func main() {
 	// multiply key to occupy entire new image
 	// or be clever and include *factor in assignment
 	// TODO: fix this mess
-	for i := 0; i < fbounds.Max.X; i++ {
-		for j := 0; j < fbounds.Max.Y; j++ {
+	// for i := 0; i < fbounds.Max.X; i++ {
+	// 	for j := 0; j < fbounds.Max.Y; j++ {
+	// 		curPath := mosKeyMap[i][j]
+	// 		// open image
+	// 		curImg, err := returnImgFromPath("./input/mosaic/PCB_square_png" + "/resized" + curPath + ".png")
+	// 		if err != nil {
+	// 			fmt.Printf("Error: unable to open mosaic")
+	// 		}
+	// 		for n := 0; n < 35; n++ {
+	// 			for m := 0; m < 35; m++ {
+	// 				r, g, b, _ := curImg.At(m, n).RGBA()
+	// 				cVal := color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: 255}
+	// 				finalImage.Set(i, j, cVal)
+	// 			}
+	// 		}
+
+	// 		// Copy current image into the new rectangle
+
+	// 		// copy into new img
+	// 		// save new image
+	// 	}
+	// }
+
+	// (s, t) will be used to access the final image
+	s := 0
+	t := 0
+	// Loop the new mosaic image from lower left to upper right. (i, j) will be
+	// used to access the resized target image.
+	for j := 0; j < 120; j++ {
+
+		for i := 0; i < 120; i++ {
+			t = 35 * j
+
 			curPath := mosKeyMap[i][j]
-			// open image
-			curImg, err := returnImgFromPath("./input/mosaic/PCB_square_png" + "/resized" + curPath + ".png")
+			curImg, err := returnImgFromPath("./input/mosaic/PCB_square_png" + "/resized/" + curPath + ".png")
 			if err != nil {
-				fmt.Printf("Error: unable to open mosaic")
+				fmt.Printf("Error: unable to open mosaic: %v at [%v, %v]", curImg, i, j)
 			}
+
+			// fill the current location with cooresponding pixel information
+			// from the mosaic tile information (m,n) will be used to loop the
+			// current mosaic photo.
 			for n := 0; n < 35; n++ {
+				s = 35 * i
 				for m := 0; m < 35; m++ {
 					r, g, b, _ := curImg.At(m, n).RGBA()
 					cVal := color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: 255}
-					finalImage.Set(i, j, cVal)
+					finalImage.Set(s, t, cVal)
+					//fmt.Printf("%v,", s)
+					s++
 				}
+				//fmt.Printf("\n")
+				t++
 			}
 
-			// Copy current image into the new rectangle
-
-			// copy into new img
-			// save new image
 		}
+
+		fmt.Printf("col complete: %v of 120\n", j)
 	}
+
 	//fmt.Println(mosKeyMap)
 
 	// Image Creation
@@ -289,6 +336,14 @@ func main() {
 	// - create new image, write to file
 
 	err = writeImgToFile(resizedTargetImg, "./output/resizedTarget.png")
+	if err != nil {
+		fmt.Println("Error writing the resized target image to file")
+	}
+
+	err = writeImgToFile(finalImage, "./output/mosaic_img.png")
+	if err != nil {
+		fmt.Println("Error writing the final mosaic image to file")
+	}
 
 	// TODO: Create nearest mapping function to map pixel value to nearest
 	// mosaic value.
