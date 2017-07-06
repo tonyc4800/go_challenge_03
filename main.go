@@ -32,35 +32,32 @@ func returnImgFromPath(imgPath string) (image.Image, error) {
 // channel as an 8-bit float64 array.
 func calcAvgRGB(img image.Image) [3]uint32 {
 	bounds := img.Bounds()
-
-	rgbVals := [3]uint32{0, 0, 0}
+	rgbS := [3]uint32{0, 0, 0}
 	var totalPix uint32
 
-	// Loop image from bottom left to upper right.  Values are shifted by 8
+	// Loop image from bottom left to upper right.  Values are divided by 2^8
 	// since RGBA returns values on [0, 65535](16-bit) and [0, 255](8-bit) is,
 	// subjectively, easier to interpret.
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			r, g, b, _ := img.At(x, y).RGBA()
-			//fmt.Printf("%v:{%v} %v:{%v} %v:{%v}\n", "red", r/256, "green", g/256, "blue", b/256)
-			rgbVals[0] = rgbVals[0] + (r / 256)
-			rgbVals[1] = rgbVals[1] + (g / 256)
-			rgbVals[2] = rgbVals[2] + (b / 256)
+			rgbS[0] = rgbS[0] + (r / 256)
+			rgbS[1] = rgbS[1] + (g / 256)
+			rgbS[2] = rgbS[2] + (b / 256)
 			totalPix++
 		}
 	}
-	//fmt.Printf("%v:{%v} %v:{%v} %v:{%v}\n", "red", rgbVals[0], "green", rgbVals[1], "blue", rgbVals[2])
 
 	// Calculate average for each channel.
-	rgbVals[0] = rgbVals[0] / totalPix
-	rgbVals[1] = rgbVals[1] / totalPix
-	rgbVals[2] = rgbVals[2] / totalPix
+	rgbS[0] = rgbS[0] / totalPix
+	rgbS[1] = rgbS[1] / totalPix
+	rgbS[2] = rgbS[2] / totalPix
 
-	return rgbVals
+	return rgbS
 }
 
-// resizeImage accepts and image and target x and y sizes, then resizes and
-// returns the image. Docs: https://golang.org/pkg/image/#NewRGBA.
+// resizeImage accepts and image and target width and height sizes, then resizes
+// and returns the image.
 func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
 
 	// Create new, resized, image rectangle.
@@ -101,12 +98,11 @@ func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
 	// Loop coordinates and create sub images
 	xStart := 0
 	yStart := 0
-
 	for j, yCoord := range yCoords {
 		for i, xCoord := range xCoords {
 
-			// (i, j) will be the coord for the pix value in the new image.
-			// (xStart, yStart, xCoord, yCoord)Rect will be the sub image.
+			// (i, j) will be the coordinates for the pix value in the new image
+			// and (xStart, yStart, xCoord, yCoord) will describe the sub image.
 			subImg := image.NewRGBA(image.Rect(0, 0, xCoord-xStart, yCoord-yStart))
 
 			// Fill subimage pixel values.
@@ -127,7 +123,6 @@ func resizeImage(oImg image.Image, tWidth int, tHeight int) image.Image {
 			imgVals := calcAvgRGB(subImg)
 			nVal := color.RGBA{R: uint8(imgVals[0]), G: uint8(imgVals[1]), B: uint8(imgVals[2]), A: 255}
 			rImage.Set(i, j, nVal)
-
 			xStart = xCoord
 		}
 		yStart = yCoord
@@ -147,11 +142,16 @@ func writeImgToFile(img image.Image, filePath string) error {
 
 	rsImgF, err := os.Create(filePath)
 	if err != nil {
-		fmt.Printf("Error creating img file: %v\n", err)
+		return fmt.Errorf("unable to creating img file: %v", err)
 	}
-	//defer rsImgF.Close()
+	defer rsImgF.Close()
+
 	err = png.Encode(rsImgF, img)
-	return err
+	if err != nil {
+		return fmt.Errorf("unable to write image to file: %v", err)
+	}
+
+	return nil
 }
 
 func createMosaicMapping(mosDir string, resizeMosW int, resizeMosH int) map[string][3]uint8 {
@@ -234,7 +234,6 @@ func main() {
 				R := v[0]
 				G := v[1]
 				B := v[2]
-				//fmt.Printf("%v:(R:%v, G:%v, B:%v)\n", k, R, G, B)
 
 				// Calculate nearest mosaic The squareroot is removed for
 				// optimization since we don't care what the value of d is.
@@ -250,19 +249,14 @@ func main() {
 
 			}
 			mosKeyMap[i][j] = mosaicN
-			// if i == 0 {
-			// 	fmt.Printf("%v:[%v,%v] - %v = (%v, %v, %v)->(%v, %v, %v)\n", track, i, j, mosaicN, mosMap[mosaicN][0], mosMap[mosaicN][1], mosMap[mosaicN][2], uint8(r), uint8(g), uint8(b))
-			// }
-
 			track++
 		}
 	}
 
 	finalImage := image.NewRGBA(image.Rect(0, 0, resizeWidth*resizeMosW, resizeHeight*resizeMosH))
-	fbounds := finalImage.Bounds()
-	fWidth := fbounds.Max.X - fbounds.Min.X
-	fHeight := fbounds.Max.Y - fbounds.Min.Y
-	fmt.Printf("%v x %v\n", fWidth, fHeight)
+	//fbounds := finalImage.Bounds()
+	//fWidth := fbounds.Max.X - fbounds.Min.X
+	//fHeight := fbounds.Max.Y - fbounds.Min.Y
 
 	// Loop the new mosaic image from lower left to upper right. (i, j) will be
 	// used to access the resized target image. (s, t) will be used to access
