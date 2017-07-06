@@ -250,7 +250,7 @@ func main() {
 		}
 	}
 
-	finalImage := image.NewRGBA(image.Rect(0, 0, rsTarW*rsMosW, rsTarH*rsMosH))
+	finalImg := image.NewRGBA(image.Rect(0, 0, rsTarW*rsMosW, rsTarH*rsMosH))
 
 	// Loop the new mosaic image from lower left to upper right. (i, j) will be
 	// used to access the resized target image. (s, t) will be used to access
@@ -274,7 +274,7 @@ func main() {
 				for m := 0; m < rsMosW; m++ {
 					r, g, b, _ := curImg.At(m, n).RGBA()
 					cVal := color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: 255}
-					finalImage.Set(s, t, cVal)
+					finalImg.Set(s, t, cVal)
 					s++
 				}
 				t++
@@ -289,7 +289,7 @@ func main() {
 	}
 
 	outPath := "./output/" + tarName
-	err = writeImgToFile(finalImage, outPath)
+	err = writeImgToFile(finalImg, outPath)
 	if err != nil {
 		fmt.Println("Error writing the final mosaic image to file")
 	}
