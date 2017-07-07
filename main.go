@@ -187,10 +187,17 @@ func createMosaicMapping(mosDir string, rsMosW int, rsMosH int) map[string][3]ui
 	return mosMap
 }
 
-func main() {
+func createMosaic(tarImgP string, mosDir string) (string, error) {
 
-	// Read mosaic images to see what values we have to work with.
-	mosDir := "./input/mosaic/PCB_square_png"
+	// tarName is the name of the target input image.
+	fName := filepath.Base(tarImgP)
+	extName := filepath.Ext(tarImgP)
+	tarName := fName[:len(fName)-len(extName)]
+
+	img, err := returnImgFromPath(tarImgP)
+	if err != nil {
+		return "", fmt.Errorf("unable to obtain img: %v", err)
+	}
 
 	const rsTarW int = 300
 	const rsTarH int = 300
@@ -198,17 +205,6 @@ func main() {
 	const rsMosH int = 35
 
 	mosMap := createMosaicMapping(mosDir, rsMosH, rsMosW)
-
-	tarImgDir := "./input/target/"
-	//tarName := "day_man.png"
-	//tarName := "boris_squat.png"
-	tarName := "abby_jack.png"
-	tarImgP := tarImgDir + tarName
-
-	img, err := returnImgFromPath(tarImgP)
-	if err != nil {
-		fmt.Printf("Error Obtaining Img: %v\n", err)
-	}
 
 	rsTarImg := resizeImage(img, rsTarW, rsTarH)
 
@@ -280,13 +276,35 @@ func main() {
 	}
 
 	if err := writeImgToFile(rsTarImg, "./output/resizedTarget.png"); err != nil {
-		fmt.Println("Error writing the resized target image to file")
+		return "", fmt.Errorf("unable to write the resized target image to file %v", err)
 	}
 
 	outPath := "./output/" + tarName
 	if err := writeImgToFile(finalImg, outPath); err != nil {
-		fmt.Println("Error writing the final mosaic image to file")
+		return "", fmt.Errorf("unable to write the final mosaic image to file: %v", err)
 	}
 
-	fmt.Println("yipee")
+	return outPath, nil
+}
+
+// NOTE: this is a dummy call until the conversion to API is complete
+func main() {
+	// tarImgDir is the input directory containing the target image.
+	tarImgDir := "./input/target/"
+
+	// tarImgP is the full path to the target image.
+	//tarName := "day_man.png"
+	//tarName := "boris_squat.png"
+	tarName := "abby_jack.png"
+	tarImgP := tarImgDir + tarName
+
+	// mosDir is a directory containing the mosaic images.
+	mosDir := "./input/mosaic/PCB_square_png"
+
+	outPath, err := createMosaic(tarImgP, mosDir)
+	if err != nil {
+		fmt.Printf("things aren't happening: %v\n", err)
+	}
+	fmt.Printf("OutPath: %v", outPath)
+
 }
