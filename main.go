@@ -28,6 +28,23 @@ func returnImgFromPath(imgPath string) (image.Image, error) {
 	return img, nil
 }
 
+// writeImgToFile is a convenience function that will likely be deleted.
+func writeImgToFile(img image.Image, filePath string) error {
+
+	rsImgF, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("unable to creating img file: %v", err)
+	}
+	defer rsImgF.Close()
+
+	err = png.Encode(rsImgF, img)
+	if err != nil {
+		return fmt.Errorf("unable to write image to file: %v", err)
+	}
+
+	return nil
+}
+
 // calcAvgRGB accepts and image and returns the average pixel values for each
 // channel as an three value array (RGB).
 func calcAvgRGB(img image.Image) [3]uint32 {
@@ -133,29 +150,6 @@ func resizeImage(oImg image.Image, tW int, tH int) image.Image {
 	return rsImg
 }
 
-// TODO: create this function
-// nearestMapping...
-func nearestMapping() {
-
-}
-
-// writeImgToFile is a convenience function that will likely be deleted.
-func writeImgToFile(img image.Image, filePath string) error {
-
-	rsImgF, err := os.Create(filePath)
-	if err != nil {
-		return fmt.Errorf("unable to creating img file: %v", err)
-	}
-	defer rsImgF.Close()
-
-	err = png.Encode(rsImgF, img)
-	if err != nil {
-		return fmt.Errorf("unable to write image to file: %v", err)
-	}
-
-	return nil
-}
-
 func createMosaicMapping(mosDir string, rsMosW int, rsMosH int) map[string][3]uint8 {
 
 	// Create directory to hold smaller images (if not exist) os.ModePerm is
@@ -219,13 +213,14 @@ func main() {
 	rsTarImg := resizeImage(img, rsTarW, rsTarH)
 
 	// Loop resized image and map a mosaic value to the pixel value.
-	mosKeyMap := [rsTarW][rsTarH]string{}
+	mosImgIndex := [rsTarW][rsTarH]string{}
 	bounds := rsTarImg.Bounds()
 
-	// Loop resized image columns (height).
+	// Loop resized image columns (height), then internally loop the resized
+	// image by columns.  This will loop the image from lower left, to right,
+	// then move up a row, so that the loop terminates in the upper right.  The
+	// image will be indexed (i,j)
 	for j := 0; j < (bounds.Max.Y - bounds.Min.Y); j++ {
-
-		// Loop resized image columns (width).
 		for i := 0; i < (bounds.Max.X - bounds.Min.X); i++ {
 			r, g, b, _ := rsTarImg.At(i, j).RGBA()
 			var mosaicN string
@@ -235,8 +230,8 @@ func main() {
 				G := v[1]
 				B := v[2]
 
-				// Calculate nearest mosaic The squareroot is removed for
-				// optimization since we don't care what the value of d is.
+				// Calculate nearest mosaic The, expected, squareroot is removed
+				// for optimization since we don't care what the value of d is.
 				rd := math.Pow((float64(R) - float64(uint8(r))), 2)
 				gd := math.Pow((float64(G) - float64(uint8(g))), 2)
 				bd := math.Pow((float64(B) - float64(uint8(b))), 2)
@@ -246,10 +241,11 @@ func main() {
 					mosaicN = k
 				}
 			}
-			mosKeyMap[i][j] = mosaicN
+			mosImgIndex[i][j] = mosaicN
 		}
 	}
 
+	// Create a blank final image of the target size * size of the mosaic tile.
 	finalImg := image.NewRGBA(image.Rect(0, 0, rsTarW*rsMosW, rsTarH*rsMosH))
 
 	// Loop the new mosaic image from lower left to upper right. (i, j) will be
@@ -260,7 +256,7 @@ func main() {
 	for j := 0; j < rsTarH; j++ {
 		for i := 0; i < rsTarW; i++ {
 			t = rsMosH * j
-			curPath := mosKeyMap[i][j]
+			curPath := mosImgIndex[i][j]
 			curImg, err := returnImgFromPath("./input/mosaic/PCB_square_png" + "/resized/" + curPath + ".png")
 			if err != nil {
 				fmt.Printf("Error: unable to open mosaic: %v at [%v, %v]", curImg, i, j)
@@ -283,14 +279,12 @@ func main() {
 		fmt.Printf("col complete: %v of %v\n", j+1, rsTarH)
 	}
 
-	err = writeImgToFile(rsTarImg, "./output/resizedTarget.png")
-	if err != nil {
+	if err := writeImgToFile(rsTarImg, "./output/resizedTarget.png"); err != nil {
 		fmt.Println("Error writing the resized target image to file")
 	}
 
 	outPath := "./output/" + tarName
-	err = writeImgToFile(finalImg, outPath)
-	if err != nil {
+	if err := writeImgToFile(finalImg, outPath); err != nil {
 		fmt.Println("Error writing the final mosaic image to file")
 	}
 
