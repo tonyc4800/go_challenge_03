@@ -28,7 +28,8 @@ func returnImgFromPath(imgPath string) (image.Image, error) {
 	return img, nil
 }
 
-// writeImgToFile is a convenience function that will likely be deleted.
+// writeImgToFile is a convenience function to encode the created image to png
+// and write the image to a specified path.
 func writeImgToFile(img image.Image, filePath string) error {
 	rsImgF, err := os.Create(filePath)
 	if err != nil {
