@@ -295,7 +295,7 @@ func createMosaic(tarImgP string, mosDir string) (string, error) {
 		return "", fmt.Errorf("unable to write the resized target image to file %v", err)
 	}
 
-	outPath := "../output/" + tarName
+	outPath := "../output/" + tarName + ".png"
 	if err := writeImgToFile(finalImg, outPath); err != nil {
 		return "", fmt.Errorf("unable to write the final mosaic image to file: %v", err)
 	}
