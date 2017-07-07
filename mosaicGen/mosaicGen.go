@@ -90,44 +90,44 @@ func resizeImage(oImg image.Image, tW int, tH int) image.Image {
 	// Create a grid of upper right/bounding coordinates for subimages from the
 	// original image that can be mapped into the new image. Coordinate values
 	// will be cropped to an int value, not rounded.
-	var yBoundsU []int
-	var xBoundsU []int
+	var y2S []int
+	var x2S []int
 
 	// Do not loop until the target height and width since we are multiplying
 	// the upper bound by the ratio.  The original max value will be added to
 	// appended the the slice after looping.
 	for y := 0; y < tH; y++ {
 		i := int(float64(y) * hRatio)
-		yBoundsU = append(yBoundsU, i)
+		y2S = append(y2S, i)
 	}
-	yBoundsU = append(yBoundsU, bounds.Max.Y)
+	y2S = append(y2S, bounds.Max.Y)
 
 	for x := 0; x < tW; x++ {
 		i := int(float64(x) * wRatio)
-		xBoundsU = append(xBoundsU, i)
+		x2S = append(x2S, i)
 	}
-	xBoundsU = append(xBoundsU, bounds.Max.X)
+	x2S = append(x2S, bounds.Max.X)
 
 	// Remove first value from slice since it is not an upper bound.
-	xBoundsU = append(xBoundsU[:0], xBoundsU[0+1:]...)
-	yBoundsU = append(yBoundsU[:0], yBoundsU[0+1:]...)
+	x2S = append(x2S[:0], x2S[0+1:]...)
+	y2S = append(y2S[:0], y2S[0+1:]...)
 
 	// Create sub images from the original image.  The subimage bounds are
-	// contained by a rectangle defined as (xBoundL, yBoundL, xBoundU, yBoundU).
-	yBoundL := 0
-	for j, yBoundU := range yBoundsU {
-		xBoundL := 0
-		for i, xBoundU := range xBoundsU {
+	// contained by a rectangle defined as (x1, y1, x2, y2).
+	y1 := 0
+	for j, y2 := range y2S {
+		x1 := 0
+		for i, x2 := range x2S {
 
 			// (i, j) will be the coordinates for the pix value in the new image
-			// and (xBoundL, yBoundL, xBoundU, yBoundU) will describe the sub image.
-			subImg := image.NewRGBA(image.Rect(0, 0, xBoundU-xBoundL, yBoundU-yBoundL))
+			// and (x1, y1, x2, y2) will describe the sub image.
+			subImg := image.NewRGBA(image.Rect(0, 0, x2-x1, y2-y1))
 
 			// Fill subimage pixel values.
 			n := 0
-			for yy := yBoundL; yy <= yBoundU; yy++ {
+			for yy := y1; yy <= y2; yy++ {
 				m := 0
-				for xx := xBoundL; xx <= xBoundU; xx++ {
+				for xx := x1; xx <= x2; xx++ {
 					r, g, b, _ := oImg.At(xx, yy).RGBA()
 					cVal := color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: 255}
 					subImg.Set(m, n, cVal)
@@ -138,12 +138,12 @@ func resizeImage(oImg image.Image, tW int, tH int) image.Image {
 
 			// Assign value to new image. alpha is hardcoded to 255 since we do
 			// not want a transparent image.
-			imgVals := calcAvgRGB(subImg)
-			nVal := color.RGBA{R: uint8(imgVals[0]), G: uint8(imgVals[1]), B: uint8(imgVals[2]), A: 255}
+			avgRBG := calcAvgRGB(subImg)
+			nVal := color.RGBA{R: uint8(avgRBG[0]), G: uint8(avgRBG[1]), B: uint8(avgRBG[2]), A: 255}
 			rsImg.Set(i, j, nVal)
-			xBoundL = xBoundU
+			x1 = x2
 		}
-		yBoundL = yBoundU
+		y1 = y2
 	}
 
 	return rsImg
@@ -189,8 +189,8 @@ func createMosaicMapping(mosDir string, rsMosW int, rsMosH int) (map[string][3]u
 		}
 
 		// Add [rs mosaic name]:[average RGB value] pair to map.
-		imgVals := calcAvgRGB(rsImg)
-		mVal := [3]uint8{uint8(imgVals[0]), uint8(imgVals[1]), uint8(imgVals[2])}
+		avgRBG := calcAvgRGB(rsImg)
+		mVal := [3]uint8{uint8(avgRBG[0]), uint8(avgRBG[1]), uint8(avgRBG[2])}
 		mosMap[key] = mVal
 	}
 
