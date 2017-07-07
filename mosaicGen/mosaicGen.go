@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 )
 
-// returnImgFromPath accepts a file path to a jpeg image and returns the image.
-// NOTE: `*.jpg`` is not producing expected results.
+// returnImgFromPath accepts a file path to a png image and returns the image.
+// NOTE: only `*.png` is accepted as *.jpg`` is not producing expected results.
 func returnImgFromPath(imgPath string) (image.Image, error) {
 	f, err := os.Open(imgPath)
 	if err != nil {
@@ -45,8 +45,8 @@ func writeImgToFile(img image.Image, filePath string) error {
 	return nil
 }
 
-// calcAvgRGB accepts and image and returns the average pixel values for each
-// channel as an three value array (RGB).
+// calcAvgRGB accepts an image and returns the average pixel values for each
+// channel as a three value array (RGB).
 func calcAvgRGB(img image.Image) [3]uint32 {
 	bounds := img.Bounds()
 	rgbS := [3]uint32{0, 0, 0}
@@ -201,6 +201,10 @@ func createMosaicMapping(mosDir string, rsMosW int, rsMosH int) (map[string][3]u
 	return mosMap, nil
 }
 
+// createMosaic is the main entry point and accepts a path to the a target image
+// and a path to a directory containing images to be used as mosaic images.
+// A new image, created of the mosaic images is created that looks similar to
+// the target image.  A path to the generated mosaic image is returned.
 func createMosaic(tarImgP string, mosDir string) (string, error) {
 
 	// tarName is the name of the target input image.
