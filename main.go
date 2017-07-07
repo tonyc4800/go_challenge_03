@@ -150,7 +150,7 @@ func resizeImage(oImg image.Image, tW int, tH int) image.Image {
 	return rsImg
 }
 
-func createMosaicMapping(mosDir string, rsMosW int, rsMosH int) map[string][3]uint8 {
+func createMosaicMapping(mosDir string, rsMosW int, rsMosH int) (map[string][3]uint8, error) {
 
 	// Create directory to hold smaller images (if not exist) os.ModePerm is
 	// equivalent to unix permissions `777`.
@@ -170,13 +170,15 @@ func createMosaicMapping(mosDir string, rsMosW int, rsMosH int) map[string][3]ui
 		if ext == ".png" {
 			img, err := returnImgFromPath(mosDir + "/" + fPath)
 			if err != nil {
-				fmt.Println(fPath)
-				fmt.Printf("Error Obtaining Img: %v\n", err)
+				return nil, fmt.Errorf("unable to obtain mosaic img (%v) %v", fPath, err)
 			}
 
 			rsImg := resizeImage(img, rsMosW, rsMosH)
 			rsPath := rsDir + "/" + fPath
-			writeImgToFile(rsImg, rsPath)
+
+			if err := writeImgToFile(rsImg, rsPath); err != nil {
+				return nil, fmt.Errorf("unable to write the resized image to file %v", err)
+			}
 
 			imgVals := calcAvgRGB(rsImg)
 			mVal := [3]uint8{uint8(imgVals[0]), uint8(imgVals[1]), uint8(imgVals[2])}
@@ -184,7 +186,7 @@ func createMosaicMapping(mosDir string, rsMosW int, rsMosH int) map[string][3]ui
 		}
 	}
 
-	return mosMap
+	return mosMap, nil
 }
 
 func createMosaic(tarImgP string, mosDir string) (string, error) {
@@ -204,7 +206,10 @@ func createMosaic(tarImgP string, mosDir string) (string, error) {
 	const rsMosW int = 35
 	const rsMosH int = 35
 
-	mosMap := createMosaicMapping(mosDir, rsMosH, rsMosW)
+	mosMap, err := createMosaicMapping(mosDir, rsMosH, rsMosW)
+	if err != nil {
+		return "", fmt.Errorf("unable to create mosaic mapping: %v", err)
+	}
 
 	rsTarImg := resizeImage(img, rsTarW, rsTarH)
 
@@ -293,8 +298,8 @@ func main() {
 	tarImgDir := "./input/target/"
 
 	// tarImgP is the full path to the target image.
-	//tarName := "day_man.png"
-	//tarName := "boris_squat.png"
+	// tarName := "day_man.png"
+	// tarName := "boris_squat.png"
 	tarName := "abby_jack.png"
 	tarImgP := tarImgDir + tarName
 
