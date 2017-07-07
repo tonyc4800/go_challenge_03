@@ -150,6 +150,10 @@ func resizeImage(oImg image.Image, tW int, tH int) image.Image {
 	return rsImg
 }
 
+// createMosaicMapping accepts a path to a directory containing images to use as
+// the mosaic images and the width and height to resize the mosaic images to and
+// writes the resized images to a specified directory.  A map of the resized
+// mosaic file path and the average RGB value is returned
 func createMosaicMapping(mosDir string, rsMosW int, rsMosH int) (map[string][3]uint8, error) {
 
 	// Create directory to hold smaller images (if not exist) os.ModePerm is
@@ -161,29 +165,38 @@ func createMosaicMapping(mosDir string, rsMosW int, rsMosH int) (map[string][3]u
 
 	mosMap := make(map[string][3]uint8)
 	mosFiles, _ := ioutil.ReadDir(mosDir)
-
 	for _, f := range mosFiles {
 		fPath := f.Name()
 		ext := filepath.Ext(fPath)
 		key := fPath[0 : len(fPath)-len(ext)]
 
-		if ext == ".png" {
-			img, err := returnImgFromPath(mosDir + "/" + fPath)
-			if err != nil {
-				return nil, fmt.Errorf("unable to obtain mosaic img (%v) %v", fPath, err)
-			}
-
-			rsImg := resizeImage(img, rsMosW, rsMosH)
-			rsPath := rsDir + "/" + fPath
-
-			if err := writeImgToFile(rsImg, rsPath); err != nil {
-				return nil, fmt.Errorf("unable to write the resized image to file %v", err)
-			}
-
-			imgVals := calcAvgRGB(rsImg)
-			mVal := [3]uint8{uint8(imgVals[0]), uint8(imgVals[1]), uint8(imgVals[2])}
-			mosMap[key] = mVal
+		// Functionality only supports png currently, jpg encoding/decoding
+		// produced unexpected results.
+		if ext != ".png" {
+			continue
 		}
+
+		img, err := returnImgFromPath(mosDir + "/" + fPath)
+		if err != nil {
+			return nil, fmt.Errorf("unable to obtain mosaic img (%v) %v", fPath, err)
+		}
+
+		// Create the resized mosaic image and write it to the containing
+		// directory.
+		rsImg := resizeImage(img, rsMosW, rsMosH)
+		rsPath := rsDir + "/" + fPath
+		if err := writeImgToFile(rsImg, rsPath); err != nil {
+			return nil, fmt.Errorf("unable to write the resized image to file %v", err)
+		}
+
+		// Add [rs mosaic name]:[average RGB value] pair to map.
+		imgVals := calcAvgRGB(rsImg)
+		mVal := [3]uint8{uint8(imgVals[0]), uint8(imgVals[1]), uint8(imgVals[2])}
+		mosMap[key] = mVal
+	}
+
+	if len(mosMap) <= 1 {
+		return nil, fmt.Errorf("insufficient number of mosaic images (%v)", len(mosMap))
 	}
 
 	return mosMap, nil
